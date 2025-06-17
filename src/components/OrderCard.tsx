@@ -11,7 +11,6 @@ interface OrderCardProps {
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock },
-  auto_dispatch: { label: 'Auto Dispatch', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: ArrowRight },
   dispatch_failed: { label: 'Dispatch Failed', color: 'bg-red-100 text-red-800 border-red-200', icon: X },
   accepted: { label: 'Accepted', color: 'bg-green-100 text-green-800 border-green-200', icon: Check },
   driver_at_pickup: { label: 'At Pickup', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: MapPin },
@@ -23,7 +22,6 @@ const statusConfig = {
 const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
   const statusFlow: Record<OrderStatus, OrderStatus | null> = {
     pending: null,
-    auto_dispatch: null,
     dispatch_failed: null,
     accepted: 'driver_at_pickup',
     driver_at_pickup: 'picked',
@@ -34,29 +32,24 @@ const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
   return statusFlow[currentStatus];
 };
 
-// Generate a simple map placeholder based on address
+// Generate an embeddable Google Map URL
 const generateMapUrl = (address: string) => {
-  // Using a simple colored rectangle as map placeholder
-  // In a real app, you'd use Google Maps Static API or similar
-  const colors = ['4285f4', '34a853', 'ea4335', 'fbbc04', '9aa0a6'];
-  const colorIndex = address.length % colors.length;
-  const color = colors[colorIndex];
-  
-  return `https://via.placeholder.com/300x120/${color}/ffffff?text=📍+Map`;
+  const encodedAddress = encodeURIComponent(address);
+  return `https://www.google.com/maps?q=${encodedAddress}&output=embed`;
 };
 
 export default function OrderCard({ order, onAccept, onDecline, onStatusChange }: OrderCardProps) {
   const config = statusConfig[order.status];
   const Icon = config.icon;
   const nextStatus = getNextStatus(order.status);
-  const canAcceptDecline = order.status === 'pending' || order.status === 'auto_dispatch';
+  const canAcceptDecline = order.status === 'pending';
   const canProgress = nextStatus && onStatusChange;
 
   const formatTime = (date: Date) => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.floor(diffMins / 60);
@@ -91,7 +84,7 @@ export default function OrderCard({ order, onAccept, onDecline, onStatusChange }
           </div>
           <span className="text-gray-900 font-medium">{order.phoneNumber}</span>
         </div>
-        
+
         <div className="flex items-start space-x-3">
           <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mt-1">
             <MapPin size={16} className="text-gray-600" />
@@ -102,28 +95,19 @@ export default function OrderCard({ order, onAccept, onDecline, onStatusChange }
           </div>
         </div>
 
-        {/* Map Section */}
+        {/* Embedded Map */}
         <div className="ml-11 mt-3">
-          <div className="relative rounded-2xl overflow-hidden shadow-sm border border-gray-200">
-            <img 
+          <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+            <iframe
               src={generateMapUrl(order.address)}
-              alt="Location map"
-              className="w-full h-24 object-cover"
+              title="Location Map"
+              loading="lazy"
+              className="w-full h-40 rounded-2xl border-0"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg">
-              <p className="text-xs font-semibold text-gray-800">{order.location}</p>
-            </div>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <DollarSign size={16} className="text-green-600" />
-            </div>
-            <span className="text-xl font-bold text-green-600">${order.orderValue.toFixed(2)}</span>
-          </div>
           <div className="flex items-center space-x-2 text-gray-500">
             <Clock size={14} />
             <span className="text-sm">{formatTime(order.createdAt)}</span>
@@ -151,7 +135,7 @@ export default function OrderCard({ order, onAccept, onDecline, onStatusChange }
             </button>
           </div>
         )}
-        
+
         {canProgress && (
           <button
             onClick={() => onStatusChange(order.id, nextStatus)}

@@ -22,7 +22,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [popupData, setPopupData] = useState<PopupData | null>(null);
 
   const handleAcceptOrder = (orderId: string) => {
-    setOrders(prev => prev.map(order => 
+    setOrders(prev => prev.map(order =>
       order.id === orderId ? { ...order, status: 'accepted' as OrderStatus } : order
     ));
   };
@@ -32,9 +32,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev => prev.map(order => 
+    setOrders(prev => prev.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
+  };
+
+  const [status, setStatus] = useState<'online' | 'offline' | 'busy'>('online');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const statusOptions = {
+    online: { label: 'Online', color: 'green' },
+    offline: { label: 'Offline', color: 'gray' },
+    busy: { label: 'Busy', color: 'red' },
   };
 
   const handleRecentOrderClick = (orderId: string) => {
@@ -47,10 +56,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const handleStatsClick = (type: string) => {
     const stats = {
       total: orders.length,
-      pending: orders.filter(o => o.status === 'pending' || o.status === 'auto_dispatch').length,
+      pending: orders.filter(o => o.status === 'pending').length,
       inProgress: orders.filter(o => ['accepted', 'driver_at_pickup', 'picked', 'driver_at_dropoff'].includes(o.status)).length,
       completed: orders.filter(o => o.status === 'completed').length,
-      todayEarnings: orders.reduce((sum, order) => sum + order.orderValue, 0),
+      todayEarnings: orders.reduce((sum, order) => sum, 0),
     };
 
     let popupContent: PopupData;
@@ -68,12 +77,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         };
         break;
       case 'pending':
-        const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'auto_dispatch');
+        const pendingOrders = orders.filter(o => o.status === 'pending');
         popupContent = {
           title: 'Pending Orders',
           items: pendingOrders.map(order => ({
             label: order.customerName,
-            value: `$${order.orderValue.toFixed(2)}`,
+            value: ``,
             icon: Clock
           }))
         };
@@ -89,17 +98,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           }))
         };
         break;
-      case 'earnings':
-        const completedOrders = orders.filter(o => o.status === 'completed');
-        popupContent = {
-          title: "Today's Earnings",
-          items: [
-            { label: 'Total Earnings', value: `$${stats.todayEarnings.toFixed(2)}`, icon: DollarSign },
-            { label: 'Completed Orders', value: completedOrders.length.toString(), icon: CheckCircle },
-            { label: 'Average per Order', value: `$${completedOrders.length > 0 ? (stats.todayEarnings / completedOrders.length).toFixed(2) : '0.00'}`, icon: TrendingUp },
-          ]
-        };
-        break;
       default:
         return;
     }
@@ -109,10 +107,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => o.status === 'pending' || o.status === 'auto_dispatch').length,
+    pending: orders.filter(o => o.status === 'pending').length,
     inProgress: orders.filter(o => ['accepted', 'driver_at_pickup', 'picked', 'driver_at_dropoff'].includes(o.status)).length,
     completed: orders.filter(o => o.status === 'completed').length,
-    todayEarnings: orders.reduce((sum, order) => sum + order.orderValue, 0),
+    todayEarnings: orders.reduce((sum, order) => sum, 0),
   };
 
   const renderContent = () => {
@@ -121,7 +119,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return (
           <div className="space-y-6">
             {/* Driver Status */}
-            <div 
+            <div
               className="bg-white rounded-3xl shadow-lg p-6 active:scale-95 transition-transform cursor-pointer"
               onClick={() => handleStatsClick('driver')}
             >
@@ -133,10 +131,38 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{user.driver.name}</h2>
                     <p className="text-gray-600">{user.driver.id}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm font-semibold text-green-600">Online</span>
+                    <div className="relative mt-1 w-fit">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full bg-${statusOptions[status].color}-500`}></div>
+                        <button
+                          onClick={() => setShowDropdown(prev => !prev)}
+                          className="text-sm font-semibold text-gray-700 focus:outline-none"
+                        >
+                          {statusOptions[status].label}
+                        </button>
+                      </div>
+
+                      {showDropdown && (
+                        <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-xl shadow-md w-32">
+                          {Object.entries(statusOptions).map(([key, val]) => (
+                            <button
+                              key={key}
+                              onClick={() => {
+                                setStatus(key as 'online' | 'offline' | 'busy');
+                                setShowDropdown(false);
+                              }}
+                              className={`flex items-center space-x-2 px-4 py-2 w-full text-sm hover:bg-gray-100 ${status === key ? 'font-semibold text-blue-600' : 'text-gray-800'
+                                }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full bg-${val.color}-500`}></span>
+                              <span>{val.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+
                   </div>
                 </div>
                 <button
@@ -153,10 +179,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div onClick={() => handleStatsClick('total')}>
+              <div
+                onClick={() => handleStatsClick('total')}
+                className="col-span-2"
+              >
                 <StatsCard
                   title="Total Orders"
-                  value={stats.total.toString()}
+                  value={stats.total.toLocaleString()}
                   icon={Package}
                   color="blue"
                 />
@@ -177,15 +206,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   color="purple"
                 />
               </div>
-              <div onClick={() => handleStatsClick('earnings')}>
-                <StatsCard
-                  title="Today's Earnings"
-                  value={`$${stats.todayEarnings.toFixed(0)}`}
-                  icon={CheckCircle}
-                  color="green"
-                />
-              </div>
             </div>
+
 
             {/* Recent Orders Preview */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
@@ -200,20 +222,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               </div>
               <div className="space-y-3">
                 {orders.slice(0, 3).map((order) => (
-                  <div 
-                    key={order.id} 
+                  <div
+                    key={order.id}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl active:scale-95 transition-transform cursor-pointer"
                     onClick={() => handleRecentOrderClick(order.id)}
                   >
                     <div>
                       <p className="font-semibold text-gray-900">{order.customerName}</p>
-                      <p className="text-sm text-gray-600">${order.orderValue.toFixed(2)}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       order.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
+                        'bg-blue-100 text-blue-800'
+                      }`}>
                       {order.status.replace('_', ' ').toUpperCase()}
                     </span>
                   </div>
@@ -230,7 +250,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               <h2 className="text-xl font-bold text-gray-900 mb-2">Incoming Orders</h2>
               <p className="text-gray-600 text-sm">Manage your delivery orders</p>
             </div>
-            
+
             {orders.length === 0 ? (
               <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -242,9 +262,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className={`transition-all duration-500 ${
-                      selectedOrderId === order.id ? 'ring-4 ring-blue-300 ring-opacity-50' : ''
-                    }`}
+                    className={`transition-all duration-500 ${selectedOrderId === order.id ? 'ring-4 ring-blue-300 ring-opacity-50' : ''
+                      }`}
                   >
                     <OrderCard
                       order={order}
@@ -286,23 +305,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         <div className="flex justify-around">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-2xl transition-all ${
-              activeTab === 'home'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-2xl transition-all ${activeTab === 'home'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <Home size={24} />
             <span className="text-xs font-semibold">Home</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-2xl transition-all relative ${
-              activeTab === 'orders'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-2xl transition-all relative ${activeTab === 'orders'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <List size={24} />
             <span className="text-xs font-semibold">Orders</span>
@@ -328,7 +345,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {popupData.items.map((item, index) => {
                 const Icon = item.icon;

@@ -13,7 +13,7 @@ function App() {
       setUser({
         username,
         driver: {
-          name: 'John Doe',
+          name: 'Test User',
           id: 'DRV-1024',
         },
       });

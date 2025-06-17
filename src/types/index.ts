@@ -4,14 +4,12 @@ export interface Order {
   phoneNumber: string;
   address: string;
   location: string;
-  orderValue: number;
   status: OrderStatus;
   createdAt: Date;
 }
 
 export type OrderStatus = 
   | 'pending'
-  | 'auto_dispatch'
   | 'dispatch_failed'
   | 'accepted'
   | 'driver_at_pickup'
