@@ -41,10 +41,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const statusOptions = {
-    online: { label: 'Online', color: 'green' },
-    offline: { label: 'Offline', color: 'gray' },
-    busy: { label: 'Busy', color: 'red' },
+    online: { label: 'Online', colorClass: 'bg-green-500' },
+    offline: { label: 'Offline', colorClass: 'bg-gray-500' },
+    busy: { label: 'Busy', colorClass: 'bg-red-500' },
   };
+
 
   const handleRecentOrderClick = (orderId: string) => {
     setActiveTab('orders');
@@ -133,7 +134,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <p className="text-gray-600">{user.driver.id}</p>
                     <div className="relative mt-1 w-fit">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full bg-${statusOptions[status].color}-500`}></div>
+                        <div className={`w-3 h-3 rounded-full ${statusOptions[status].colorClass}`}></div>
                         <button
                           onClick={() => setShowDropdown(prev => !prev)}
                           className="text-sm font-semibold text-gray-700 focus:outline-none"
@@ -141,6 +142,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                           {statusOptions[status].label}
                         </button>
                       </div>
+
 
                       {showDropdown && (
                         <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-xl shadow-md w-32">
@@ -154,12 +156,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               className={`flex items-center space-x-2 px-4 py-2 w-full text-sm hover:bg-gray-100 ${status === key ? 'font-semibold text-blue-600' : 'text-gray-800'
                                 }`}
                             >
-                              <span className={`w-2 h-2 rounded-full bg-${val.color}-500`}></span>
+                              <span className={`w-2 h-2 rounded-full ${val.colorClass}`}></span>
                               <span>{val.label}</span>
                             </button>
                           ))}
                         </div>
                       )}
+
                     </div>
 
 
